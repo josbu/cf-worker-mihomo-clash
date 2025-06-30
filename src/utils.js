@@ -1,4 +1,4 @@
-import fetch from 'node-fetch';
+
 import YAML from 'yaml';
 export const backimg = 'https://t.alcy.cc/ycy';
 export const subapi = 'https://url.v1.mk';
@@ -39,6 +39,12 @@ export async function fetchResponse(url, userAgent) {
     }
     // 直接使用 Object.fromEntries 转换 headers
     const headersObj = Object.fromEntries(response.headers.entries());
+    // 替换非法 Content-Disposition 字段
+    const sanitizedCD = sanitizeContentDisposition(response.headers);
+    if (sanitizedCD) {
+        headersObj["content-disposition"] = sanitizedCD;
+    }
+
     // 获取响应体的文本内容
     const textData = await response.text();
 
@@ -1001,4 +1007,26 @@ export function configs() {
         ]
     }
     return JSON.stringify(data)
+}
+
+export function sanitizeContentDisposition(headers) {
+  const contentDisposition = headers.get("Content-Disposition") || headers.get("content-disposition");
+
+  if (!contentDisposition) return null;
+
+  const filenameMatch = contentDisposition.match(/filename="?([^"]+)"?/);
+
+  if (!filenameMatch) return null;
+
+  const originalFilename = filenameMatch[1];
+
+  // 检查是否含中文（或非 ASCII）
+  const isNonAscii = /[^\x00-\x7F]/.test(originalFilename);
+  if (!isNonAscii) return contentDisposition; // 不含中文，保持原样
+
+  // 使用 fallback ASCII 名 + filename*=UTF-8''xxx 形式替换
+  const fallback = "download.txt";
+  const encoded = encodeURIComponent(originalFilename);
+
+  return `attachment; filename="${fallback}"; filename*=UTF-8''${encoded}`;
 }
