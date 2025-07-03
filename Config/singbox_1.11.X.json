@@ -149,9 +149,6 @@
                 "disable_cache": true
             },
             {
-                "action": "resolve"
-            },
-            {
                 "action": "sniff"
             },
             {
@@ -180,6 +177,9 @@
             {
                 "clash_mode": "global",
                 "outbound": "🚀 节点选择"
+            },
+            {
+                "action": "resolve"
             }
         ],
         "rule_set": [
